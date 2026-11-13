@@ -6,6 +6,7 @@ import {
   buildInventoryResponse,
   collectFromPantry,
   donateToPantry,
+  getHealthStatus,
   getSmsDigestPreview,
 } from './lib/pantryService.js';
 import { generateAdaptedRecipes } from './lib/recipeService.js';
@@ -15,6 +16,10 @@ const PORT = Number(process.env.PORT) || 3000;
 async function startServer() {
   const app = express();
   app.use(express.json({ limit: '1mb' }));
+
+  app.get('/api/health', (_req: Request, res: Response) => {
+    res.json(getHealthStatus('express'));
+  });
 
   app.get('/api/inventory', (_req: Request, res: Response) => {
     res.json(buildInventoryResponse());

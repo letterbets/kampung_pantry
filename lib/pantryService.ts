@@ -339,3 +339,25 @@ export function getSmsDigestPreview(): SmsDigestPreview {
     },
   };
 }
+
+/**
+ * Reports API health, inventory store status, and whether Gemini is configured
+ * without exposing any secret values.
+ */
+export function getHealthStatus(runtime: 'express' | 'vercel-serverless') {
+  const snapshot = buildInventoryResponse();
+  return {
+    status: 'ok',
+    service: 'Kampung Pantry API',
+    runtime,
+    nodeVersion: process.version,
+    timestamp: new Date().toISOString(),
+    checks: {
+      inventoryStore: snapshot.items.length > 0 ? 'ok' : 'empty',
+      distinctItems: snapshot.metrics.distinctItemCount,
+      totalAvailableUnits: snapshot.metrics.totalAvailableUnits,
+      geminiApiKeyConfigured: Boolean(process.env.GEMINI_API_KEY),
+    },
+  };
+}
+
