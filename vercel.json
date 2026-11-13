@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/**/*.ts": {
-      "includeFiles": "data/inventory.json"
-    }
-  }
-}

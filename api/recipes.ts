@@ -1,6 +1,6 @@
 import type { ServerResponse } from 'node:http';
-import { generateAdaptedRecipes } from '../lib/pantryService';
-import { readJsonBody, sendJson, type ServerlessRequest } from './_http';
+import { generateAdaptedRecipes } from '../lib/recipeService.js';
+import { readJsonBody, sendJson, type ServerlessRequest } from './_http.js';
 
 /**
  * Vercel Serverless Handler: POST /api/recipes

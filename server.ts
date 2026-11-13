@@ -6,9 +6,9 @@ import {
   buildInventoryResponse,
   collectFromPantry,
   donateToPantry,
-  generateAdaptedRecipes,
   getSmsDigestPreview,
-} from './lib/pantryService';
+} from './lib/pantryService.js';
+import { generateAdaptedRecipes } from './lib/recipeService.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 

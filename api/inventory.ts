@@ -1,6 +1,6 @@
 import type { ServerResponse } from 'node:http';
-import { buildInventoryResponse } from '../lib/pantryService';
-import { sendJson, type ServerlessRequest } from './_http';
+import { buildInventoryResponse } from '../lib/pantryService.js';
+import { sendJson, type ServerlessRequest } from './_http.js';
 
 /**
  * Vercel Serverless Handler: GET /api/inventory
