@@ -9,7 +9,7 @@ import {
   getHealthStatus,
   getSmsDigestPreview,
 } from './lib/pantryService.js';
-import { generateAdaptedRecipes } from './lib/recipeService.js';
+import { fetchMealDbCategoriesData, generateAdaptedRecipes } from './lib/recipeService.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -37,6 +37,12 @@ async function startServer() {
 
   app.get('/api/sms-preview', (_req: Request, res: Response) => {
     res.json(getSmsDigestPreview());
+  });
+
+  app.get('/api/mealdb', async (req: Request, res: Response) => {
+    const category = typeof req.query.category === 'string' ? req.query.category : undefined;
+    const result = await fetchMealDbCategoriesData(category);
+    res.status(result.status).json(result.payload);
   });
 
   app.post('/api/recipes', async (req: Request, res: Response) => {

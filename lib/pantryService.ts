@@ -357,6 +357,8 @@ export function getHealthStatus(runtime: 'express' | 'vercel-serverless') {
       distinctItems: snapshot.metrics.distinctItemCount,
       totalAvailableUnits: snapshot.metrics.totalAvailableUnits,
       geminiApiKeyConfigured: Boolean(process.env.GEMINI_API_KEY),
+      mealDbEndpoint: '/api/mealdb',
+      mealDbCustomKeyConfigured: Boolean(process.env.MEALDB_API_KEY?.trim()),
     },
   };
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, ChefHat, Clock, Printer, Sparkles, UtensilsCrossed } from 'lucide-react';
 import type {
   DietaryPreference,
@@ -78,6 +78,37 @@ export function RecipeFinder({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RecipeApiResponse | null>(null);
+
+  const [mealDbCategories, setMealDbCategories] = useState<
+    Array<{ idCategory: string; strCategory: string; strCategoryThumb: string }>
+  >([]);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [categoryMeals, setCategoryMeals] = useState<
+    Array<{ idMeal: string; strMeal: string; strMealThumb?: string }>
+  >([]);
+
+  useEffect(() => {
+    safeFetchJson<{
+      categories: Array<{ idCategory: string; strCategory: string; strCategoryThumb: string }>;
+    }>('/api/mealdb')
+      .then((data) => {
+        setMealDbCategories((data.categories || []).slice(0, 8));
+      })
+      .catch(() => {});
+  }, []);
+
+  /** Loads sample recipes for a clicked TheMealDB category via /api/mealdb?category=... */
+  async function handleSelectMealDbCategory(categoryName: string) {
+    setActiveCategory(categoryName);
+    try {
+      const data = await safeFetchJson<{
+        mealsInCategory: Array<{ idMeal: string; strMeal: string; strMealThumb?: string }>;
+      }>(`/api/mealdb?category=${encodeURIComponent(categoryName)}`);
+      setCategoryMeals(data.mealsInCategory || []);
+    } catch {
+      setCategoryMeals([]);
+    }
+  }
 
   /** Toggles a dietary requirement checkbox button cleanly */
   function toggleDietary(pref: DietaryPreference) {
@@ -253,16 +284,66 @@ export function RecipeFinder({
                 ))}
               </div>
             ) : !result ? (
-              <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-xl border border-dashed border-[#CBD6CE] bg-[#F7F9F7] p-8 text-center">
-                <Sparkles className="h-8 w-8 text-[#157A4C]" aria-hidden="true" />
-                <h3 className="mt-3 font-display text-xl font-bold text-[#13221A]">
-                  Ready to turn pantry surplus into dinner
-                </h3>
-                <p className="mt-2 max-w-md text-sm text-[#47554D]">
-                  Select ingredients on the left (or click &ldquo;Cook This&rdquo; on any item in
-                  the Stock Board), choose your dietary filters, and press{' '}
-                  <strong className="text-[#13221A]">Find Adapted Recipes</strong>.
-                </p>
+              <div className="flex h-full min-h-[320px] flex-col justify-between rounded-xl border border-[#DCE5DF] bg-[#F7F9F7] p-6 sm:p-8">
+                <div className="text-center">
+                  <Sparkles className="mx-auto h-8 w-8 text-[#157A4C]" aria-hidden="true" />
+                  <h3 className="mt-3 font-display text-xl font-bold text-[#13221A]">
+                    Ready to turn pantry surplus into dinner
+                  </h3>
+                  <p className="mx-auto mt-2 max-w-md text-sm text-[#47554D]">
+                    Select ingredients on the left (or click &ldquo;Cook This&rdquo; on any item in
+                    the Stock Board), choose your dietary filters, and press{' '}
+                    <strong className="text-[#13221A]">Find Adapted Recipes</strong>.
+                  </p>
+                </div>
+
+                {mealDbCategories.length > 0 && (
+                  <div className="mt-6 border-t border-[#DCE5DF] pt-5">
+                    <p className="text-xs font-semibold text-[#47554D]">
+                      Browse Live TheMealDB Categories (via /api/mealdb)
+                    </p>
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      {mealDbCategories.map((cat) => (
+                        <button
+                          key={cat.idCategory}
+                          type="button"
+                          onClick={() => handleSelectMealDbCategory(cat.strCategory)}
+                          aria-pressed={activeCategory === cat.strCategory}
+                          className={`min-h-[38px] rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                            activeCategory === cat.strCategory
+                              ? 'border-[#157A4C] bg-[#E8F5EE] text-[#0E5A36]'
+                              : 'border-[#CBD6CE] bg-white text-[#13221A] hover:bg-[#EDF2EE]'
+                          }`}
+                        >
+                          {cat.strCategory}
+                        </button>
+                      ))}
+                    </div>
+
+                    {activeCategory && categoryMeals.length > 0 && (
+                      <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {categoryMeals.slice(0, 4).map((meal) => (
+                          <div
+                            key={meal.idMeal}
+                            className="flex items-center gap-3 rounded-lg border border-[#DCE5DF] bg-white p-2.5"
+                          >
+                            {meal.strMealThumb && (
+                              <img
+                                src={meal.strMealThumb}
+                                alt={meal.strMeal}
+                                referrerPolicy="no-referrer"
+                                className="h-11 w-11 shrink-0 rounded object-cover"
+                              />
+                            )}
+                            <p className="text-xs font-semibold text-[#13221A] line-clamp-2">
+                              {meal.strMeal}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-6">

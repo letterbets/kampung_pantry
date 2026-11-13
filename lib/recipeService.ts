@@ -68,14 +68,77 @@ async function fetchJsonWithTimeout<T>(url: string, timeoutMs = 6500): Promise<T
   }
 }
 
+/**
+ * Builds the TheMealDB v1 base URL from process.env.MEALDB_API_KEY when provided,
+ * falling back to the free public v1/1 endpoint without hardcoding any private key.
+ */
+export function getMealDbBaseUrl(): string {
+  const customKey = process.env.MEALDB_API_KEY?.trim();
+  const keySegment = customKey ? encodeURIComponent(customKey) : '1';
+  return `https://www.themealdb.com/api/json/v1/${keySegment}`;
+}
+
+export interface MealDbCategory {
+  idCategory: string;
+  strCategory: string;
+  strCategoryThumb: string;
+  strCategoryDescription: string;
+}
+
+/**
+ * Pulls recipe categories from TheMealDB categories.php endpoint,
+ * plus optional category meal previews when a category name is supplied.
+ */
+export async function fetchMealDbCategoriesData(categoryFilter?: string): Promise<{
+  status: number;
+  payload: Record<string, unknown>;
+}> {
+  const baseUrl = getMealDbBaseUrl();
+  const categoriesRes = await fetchJsonWithTimeout<{ categories: MealDbCategory[] | null }>(
+    `${baseUrl}/categories.php`,
+  );
+
+  if (!categoriesRes?.categories) {
+    return {
+      status: 502,
+      payload: {
+        error: 'Unable to fetch categories from TheMealDB right now.',
+        categories: [],
+      },
+    };
+  }
+
+  let mealsInCategory: MealDbSummary[] = [];
+  const cleanCategory = sanitizeText(categoryFilter, 40);
+  if (cleanCategory) {
+    const mealsRes = await fetchJsonWithTimeout<{ meals: MealDbSummary[] | null }>(
+      `${baseUrl}/filter.php?c=${encodeURIComponent(cleanCategory)}`,
+    );
+    mealsInCategory = (mealsRes?.meals ?? []).slice(0, 6);
+  }
+
+  return {
+    status: 200,
+    payload: {
+      source: 'TheMealDB',
+      endpoint: 'categories.php',
+      customKeyConfigured: Boolean(process.env.MEALDB_API_KEY?.trim()),
+      categories: categoriesRes.categories,
+      selectedCategory: cleanCategory || null,
+      mealsInCategory,
+    },
+  };
+}
+
 async function queryTheMealDbRecipes(selectedIngredients: string[]): Promise<MealDbDetail[]> {
+  const baseUrl = getMealDbBaseUrl();
   const candidateIds = new Set<string>();
   const keywords = Array.from(
     new Set(selectedIngredients.flatMap((item) => normalizeIngredientForMealDb(item))),
   ).slice(0, 4);
 
   for (const keyword of keywords) {
-    const filterUrl = `https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(keyword)}`;
+    const filterUrl = `${baseUrl}/filter.php?i=${encodeURIComponent(keyword)}`;
     const data = await fetchJsonWithTimeout<{ meals: MealDbSummary[] | null }>(filterUrl);
     if (data?.meals) {
       for (const meal of data.meals.slice(0, 3)) {
@@ -86,7 +149,7 @@ async function queryTheMealDbRecipes(selectedIngredients: string[]): Promise<Mea
   }
 
   if (candidateIds.size === 0 && keywords.length > 0) {
-    const searchUrl = `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(keywords[0])}`;
+    const searchUrl = `${baseUrl}/search.php?s=${encodeURIComponent(keywords[0])}`;
     const data = await fetchJsonWithTimeout<{ meals: MealDbDetail[] | null }>(searchUrl);
     if (data?.meals) {
       return data.meals.slice(0, 3);
@@ -96,7 +159,7 @@ async function queryTheMealDbRecipes(selectedIngredients: string[]): Promise<Mea
   const idsToLookup = Array.from(candidateIds).slice(0, 4);
   const details = await Promise.all(
     idsToLookup.map(async (id) => {
-      const lookupUrl = `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${encodeURIComponent(id)}`;
+      const lookupUrl = `${baseUrl}/lookup.php?i=${encodeURIComponent(id)}`;
       const res = await fetchJsonWithTimeout<{ meals: MealDbDetail[] | null }>(lookupUrl);
       return res?.meals?.[0] ?? null;
     }),
