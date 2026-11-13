@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { Calendar, Code2, MessageSquare, Printer, Thermometer } from 'lucide-react';
 import type { FridgeTelemetry, QuarterlyCookout, SmsDigestPreview } from '../types/pantry';
+import { safeFetchJson } from '../utils/api';
 
 interface CommunityOperationsProps {
   telemetry: FridgeTelemetry;
@@ -29,10 +30,9 @@ export function CommunityOperations({ telemetry, cookout }: CommunityOperationsP
       .then((url) => setQrDataUrl(url))
       .catch(() => setQrDataUrl(''));
 
-    fetch('/api/sms-preview')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: SmsDigestPreview | null) => {
-        if (data) setSmsPreview(data);
+    safeFetchJson<SmsDigestPreview>('/api/sms-preview')
+      .then((data) => {
+        setSmsPreview(data);
       })
       .catch(() => {});
   }, []);

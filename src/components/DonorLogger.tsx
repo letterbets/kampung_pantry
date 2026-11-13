@@ -8,6 +8,7 @@ import type {
   PantryCategory,
 } from '../types/pantry';
 import { estimateDonationPoints } from '../utils/formatters';
+import { safeFetchJson } from '../utils/api';
 
 interface DonorLoggerProps {
   donors: DonorProfile[];
@@ -63,32 +64,30 @@ export function DonorLogger({ donors, onDonationLogged }: DonorLoggerProps) {
 
     setSubmitting(true);
     try {
-      const response = await fetch('/api/inventory/donate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          category,
-          quantity,
-          unit: unit.trim() || 'packs',
-          expiryHours,
-          condition,
-          halal,
-          vegetarian,
-          donorName: donorName.trim(),
-          donorType,
-          donorUnit: donorUnit.trim() || 'Blk 412 Neighbourhood',
-          notes: notes.trim(),
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || 'Could not log food donation.');
-      }
+      const data = await safeFetchJson<{ message: string; inventory: InventoryResponse }>(
+        '/api/inventory/donate',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name.trim(),
+            category,
+            quantity,
+            unit: unit.trim() || 'packs',
+            expiryHours,
+            condition,
+            halal,
+            vegetarian,
+            donorName: donorName.trim(),
+            donorType,
+            donorUnit: donorUnit.trim() || 'Blk 412 Neighbourhood',
+            notes: notes.trim(),
+          }),
+        },
+      );
 
       setSuccessBanner(data.message);
-      onDonationLogged(data.inventory as InventoryResponse, data.message);
+      onDonationLogged(data.inventory, data.message);
 
       // Reset item fields while preserving donor details for quick multi-item logging
       setName('');

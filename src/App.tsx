@@ -8,6 +8,7 @@ import { DonorLogger } from './components/DonorLogger';
 import { CommunityOperations } from './components/CommunityOperations';
 import type { InventoryResponse, PantryItem } from './types/pantry';
 import { getExpiryStatus } from './utils/formatters';
+import { safeFetchJson } from './utils/api';
 
 const DEFAULT_INVENTORY: InventoryResponse = {
   telemetry: {
@@ -82,12 +83,7 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    fetch('/api/inventory')
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || 'Failed to load Kampung Pantry stock');
-        return data as InventoryResponse;
-      })
+    safeFetchJson<InventoryResponse>('/api/inventory')
       .then((data) => {
         if (!active) return;
         setInventory(data);
@@ -173,16 +169,15 @@ export default function App() {
     setCollectingId(item.id);
     setStatusMessage(null);
     try {
-      const response = await fetch('/api/inventory/collect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: item.id, amount: 1 }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || 'Could not update item stock.');
-      }
-      setInventory(data.inventory as InventoryResponse);
+      const data = await safeFetchJson<{ message: string; inventory: InventoryResponse }>(
+        '/api/inventory/collect',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: item.id, amount: 1 }),
+        },
+      );
+      setInventory(data.inventory);
       setStatusMessage(data.message);
     } catch (err) {
       setStatusMessage(

@@ -7,6 +7,7 @@ import type {
   RecipeSuggestion,
 } from '../types/pantry';
 import { getExpiryStatus } from '../utils/formatters';
+import { safeFetchJson } from '../utils/api';
 
 interface RecipeFinderProps {
   availableItems: PantryItem[];
@@ -96,7 +97,7 @@ export function RecipeFinder({
     setError(null);
 
     try {
-      const response = await fetch('/api/recipes', {
+      const data = await safeFetchJson<RecipeApiResponse>('/api/recipes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -105,12 +106,7 @@ export function RecipeFinder({
         }),
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || 'Could not fetch personalized recipes.');
-      }
-
-      setResult(data as RecipeApiResponse);
+      setResult(data);
     } catch (err) {
       setError(
         err instanceof Error
