@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+    color: #13221A;
+    background-color: #F7F9F7;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 3px solid #0E5A36;
+    outline-offset: 2px;
+  }
+}
+
+/* Senior-friendly high-contrast & larger-text mode */
+.senior-mode {
+  font-size: 18px;
+}
+
+.senior-mode h1 {
+  font-size: clamp(2.1rem, 3.8vw, 3rem);
+}
+
+.senior-mode h2 {
+  font-size: 1.75rem;
+}
+
+.senior-mode p,
+.senior-mode li,
+.senior-mode label,
+.senior-mode input,
+.senior-mode select,
+.senior-mode button {
+  line-height: 1.55;
+}
+
+.senior-mode .senior-border {
+  border-color: #13221A;
+  border-width: 2px;
+}
+
+/* Reduced motion compliance */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Printable Fridge QR & Daily Stock Sheet */
+@media print {
+  header,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .print-only-poster {
+    display: block !important;
+    border: 2px solid #000000 !important;
+    padding: 24px !important;
+  }
+}

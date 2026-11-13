@@ -1,0 +1,8 @@
+{
+  "name": "Kampung Pantry",
+  "description": "HDB Neighbourhood Community Fridge & Smart Food-Sharing Platform with live inventory tracking, donor reward points, TheMealDB recipe discovery, and Gemini dietary adaptation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
